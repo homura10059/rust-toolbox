@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = [
+    # Add workspace members here as you create them
+    # Example: "crates/my-tool",
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["homura"]
+license = "MIT"
+edition = "2021"
+repository = "https://github.com/homura10059/rust-toolbox"
+
+[workspace.dependencies]
+# Common dependencies shared across workspace members
+# Example:
+# serde = { version = "1.0", features = ["derive"] }
+# tokio = { version = "1.0", features = ["full"] }
+# clap = { version = "4.0", features = ["derive"] }
+# anyhow = "1.0"
+# thiserror = "1.0"
