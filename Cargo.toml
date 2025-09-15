@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
+members = ["crates/raindrop-notebooklm-integration"
     # Add workspace members here as you create them
     # Example: "crates/my-tool",
 ]
