@@ -33,20 +33,21 @@ pub struct BookData {
 ```
 
 ### 2. Railway-Oriented Programming
-- **Result Types**: Use `Result<T, E>` for operations that can fail
+- **Result Types**: Use `anyhow::Result<T>` for operations that can fail
 - **Pipeline Composition**: Chain operations using `map`, `and_then`, and combinators
 - **Error Handling**: Make errors explicit in the type system
 
 ```rust
+use anyhow::{Result, bail};
 use regex::Regex;
 
 impl ISBN {
-    pub fn parse(input: &str) -> Result<ISBN, String> {
+    pub fn parse(input: &str) -> Result<ISBN> {
         let re = Regex::new(r"^\d{13}$").unwrap();
         if re.is_match(input) {
             Ok(ISBN(input.to_string()))
         } else {
-            Err("Invalid ISBN format".to_string())
+            bail!("Invalid ISBN format");
         }
     }
 }
@@ -67,10 +68,12 @@ impl ISBN {
 ### Type-Safe Domain Operations
 
 ```rust
+use anyhow::{Result, bail};
+
 impl BookTitle {
-    pub fn parse(input: &str) -> Result<BookTitle, String> {
+    pub fn parse(input: &str) -> Result<BookTitle> {
         if input.trim().is_empty() {
-            Err("Book title cannot be empty".to_string())
+            bail!("Book title cannot be empty");
         } else {
             Ok(BookTitle(input.trim().to_string()))
         }
@@ -78,9 +81,9 @@ impl BookTitle {
 }
 
 impl Price {
-    pub fn parse(input: f64) -> Result<Price, String> {
+    pub fn parse(input: f64) -> Result<Price> {
         if input < 0.0 {
-            Err("Price cannot be negative".to_string())
+            bail!("Price cannot be negative");
         } else {
             Ok(Price(input))
         }
@@ -92,11 +95,11 @@ pub fn create_book_data(
     isbn: &str,
     title: &str,
     price: f64,
-) -> Result<BookData, String> {
+) -> Result<BookData> {
     let isbn = ISBN::parse(isbn)?;
     let title = BookTitle::parse(title)?;
     let price = Price::parse(price)?;
-    
+
     Ok(BookData { isbn, title, price })
 }
 ```
@@ -138,14 +141,14 @@ pub fn scrape_book_details(url: &str) -> Result<BookData, ScrapingError> {
     let isbn_str = extract_isbn(&page)?;
     let title_str = extract_title(&page)?;
     let price_value = extract_price(&page)?;
-    
+
     let isbn = ISBN::parse(&isbn_str)
-        .map_err(|e| ScrapingError::ValidationError(e))?;
+        .map_err(|e| ScrapingError::ValidationError(e.to_string()))?;
     let title = BookTitle::parse(&title_str)
-        .map_err(|e| ScrapingError::ValidationError(e))?;
+        .map_err(|e| ScrapingError::ValidationError(e.to_string()))?;
     let price = Price::parse(price_value)
-        .map_err(|e| ScrapingError::ValidationError(e))?;
-    
+        .map_err(|e| ScrapingError::ValidationError(e.to_string()))?;
+
     Ok(BookData { isbn, title, price })
 }
 ```
@@ -169,10 +172,10 @@ pub struct ScrapedText(String);
 
 // Factory functions with validation
 impl SafeURL {
-    pub fn parse(input: &str) -> Result<SafeURL, String> {
+    pub fn parse(input: &str) -> Result<SafeURL> {
         Url::parse(input)
             .map(SafeURL)
-            .map_err(|e| format!("Invalid URL format: {}", e))
+            .map_err(|e| anyhow::anyhow!("Invalid URL format: {}", e))
     }
 }
 ```
@@ -225,9 +228,9 @@ pub fn transition(state: ScrapingState, event: ScrapingEvent) -> ScrapingState {
 
 1. **Identify Domain Concepts**: Convert primitive types to newtype wrappers
 2. **Make Invalid States Impossible**: Use enums and type constraints
-3. **Create Validation Pipelines**: Use Result types for operations that can fail
+3. **Create Validation Pipelines**: Use anyhow::Result<T> for operations that can fail
 4. **Compose Functions**: Build complex operations from simple, pure functions
-5. **Handle Errors Explicitly**: Use Result and Option types consistently
+5. **Handle Errors Explicitly**: Use anyhow::Result<T> and Option types consistently
 
 ### Testing Domain Functions
 
@@ -248,7 +251,7 @@ mod tests {
     fn should_reject_invalid_isbn_formats() {
         let result = ISBN::parse("invalid");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid ISBN format"));
+        assert!(result.unwrap_err().to_string().contains("Invalid ISBN format"));
     }
     
     // Property-based testing with proptest
